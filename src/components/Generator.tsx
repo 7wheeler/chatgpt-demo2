@@ -88,9 +88,19 @@ export default () => {
         })
       }
       const timestamp = Date.now()
-      const lastMessageContent = typeof requestMessageList[requestMessageList.length - 1].content === 'string' 
-        ? requestMessageList[requestMessageList.length - 1].content 
-        : '';
+      const lastMessage = requestMessageList[requestMessageList.length - 1];
+      // For signature generation, use a text representation of the message
+      let lastMessageContent = '';
+      
+      if (typeof lastMessage.content === 'string') {
+        lastMessageContent = lastMessage.content;
+      } else if (Array.isArray(lastMessage.content)) {
+        // Find the text part of the message for signature
+        const textPart = lastMessage.content.find(item => item.type === 'text');
+        if (textPart && 'text' in textPart) {
+          lastMessageContent = textPart.text;
+        }
+      }
       
       const response = await fetch('/api/generate', {
         method: 'POST',

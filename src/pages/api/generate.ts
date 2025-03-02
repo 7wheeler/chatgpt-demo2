@@ -27,7 +27,23 @@ export const post: APIRoute = async(context) => {
       },
     }), { status: 401 })
   }
-  if (import.meta.env.PROD && !await verifySignature({ t: time, m: messages?.[messages.length - 1]?.content || '' }, sign)) {
+  
+  // Extract message content for signature verification
+  let messageContent = '';
+  const lastMessage = messages?.[messages.length - 1];
+  if (lastMessage) {
+    if (typeof lastMessage.content === 'string') {
+      messageContent = lastMessage.content;
+    } else if (Array.isArray(lastMessage.content)) {
+      // Find text content for signature verification
+      const textContent = lastMessage.content.find(item => item.type === 'text');
+      if (textContent && typeof textContent.text === 'string') {
+        messageContent = textContent.text;
+      }
+    }
+  }
+  
+  if (import.meta.env.PROD && !await verifySignature({ t: time, m: messageContent }, sign)) {
     return new Response(JSON.stringify({
       error: {
         message: 'Invalid signature.',
