@@ -1,15 +1,15 @@
-import { createSignal } from 'solid-js'
+import { createSignal, Show } from 'solid-js'
 import MarkdownIt from 'markdown-it'
 import mdKatex from 'markdown-it-katex'
 import mdHighlight from 'markdown-it-highlightjs'
 import { useClipboard, useEventListener } from 'solidjs-use'
 import IconRefresh from './icons/Refresh'
 import type { Accessor } from 'solid-js'
-import type { ChatMessage } from '@/types'
+import type { ChatMessage, MessageContent } from '@/types'
 
 interface Props {
   role: ChatMessage['role']
-  message: Accessor<string> | string
+  message: Accessor<string> | string | MessageContent[]
   showRetry?: Accessor<boolean>
   onRetry?: () => void
 }
@@ -38,7 +38,36 @@ export default ({ role, message, showRetry, onRetry }: Props) => {
     }
   })
 
-  const htmlString = () => {
+  const renderContent = () => {
+    // Handle array of content (text + images)
+    if (Array.isArray(message)) {
+      return (
+        <div>
+          {message.map((item) => {
+            if (item.type === 'text') {
+              return <div innerHTML={renderMarkdown(item.text)} />
+            } else if (item.type === 'image_url') {
+              return (
+                <div class="my-2">
+                  <img 
+                    src={item.image_url.url} 
+                    class="max-w-full rounded-lg max-h-60 object-contain"
+                    alt="User uploaded image"
+                  />
+                </div>
+              )
+            }
+            return null
+          })}
+        </div>
+      )
+    }
+    
+    // Handle string message (original behavior)
+    return <div innerHTML={renderMarkdown(typeof message === 'function' ? message() : message as string)} />
+  }
+
+  const renderMarkdown = (text: string) => {
     const md = MarkdownIt({
       linkify: true,
       breaks: true,
@@ -60,19 +89,16 @@ export default ({ role, message, showRetry, onRetry }: Props) => {
       </div>`
     }
 
-    if (typeof message === 'function')
-      return md.render(message())
-    else if (typeof message === 'string')
-      return md.render(message)
-
-    return ''
+    return md.render(text)
   }
 
   return (
     <div class="py-2 -mx-4 px-4 transition-colors md:hover:bg-slate/3">
       <div class="flex gap-3 rounded-lg" class:op-75={role === 'user'}>
         <div class={`shrink-0 w-7 h-7 mt-4 rounded-full op-80 ${roleClass[role]}`} />
-        <div class="message prose break-words overflow-hidden" innerHTML={htmlString()} />
+        <div class="message prose break-words overflow-hidden">
+          {renderContent()}
+        </div>
       </div>
       {showRetry?.() && onRetry && (
         <div class="fie px-3 mb-2">
