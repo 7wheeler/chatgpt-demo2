@@ -33,7 +33,7 @@ export const generatePayload = (apiKey: string, messages: ChatMessage[]): Reques
       model,
       messages: formattedMessages,
       temperature: 0.6,
-      max_completion_token: maxTokens,
+      max_completion_tokens: maxTokens,
       stream: true,
     }),
   }
