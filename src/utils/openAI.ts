@@ -4,7 +4,7 @@ import type { ChatMessage } from '@/types'
 
 //const model = import.meta.env.OPENAI_API_MODEL || 'gpt-3.5-turbo-16k'
 const model = import.meta.env.OPENAI_API_MODEL || 'gpt-5.4'
-const maxTokens = import.meta.env.MAX_TOKENS || 500000
+const maxTokens = import.meta.env.MAX_TOKENS || 128000
 
 export const generatePayload = (apiKey: string, messages: ChatMessage[]): RequestInit & { dispatcher?: any } => {
   // Format messages properly for the API
