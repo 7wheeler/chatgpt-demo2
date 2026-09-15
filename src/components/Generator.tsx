@@ -1,4 +1,3 @@
-
 import { Index, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { useThrottleFn } from 'solidjs-use'
 import { generateSignature } from '@/utils/auth'
@@ -315,96 +314,8 @@ export default function ChatPage() {
     fileInputRef.value = ''
   }
 
-  const renderSelectedImages = () => (
-    <Show when={selectedImages().length > 0}>
-      <div
-        class="selected-images-container"
-        style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;"
-      >
-        <Index each={selectedImages()}>
-          {(imageUrl, index) => (
-            <div
-              class="image-preview"
-              style="position: relative; width: 100px; height: 100px;"
-            >
-              <img
-                src={imageUrl()}
-                alt={`Selected image ${index() + 1}`}
-                style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;"
-              />
-              <button
-                type="button"
-                class="remove-image"
-                style="position: absolute; top: -8px; right: -8px; background: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none;"
-                onClick={() => removeImage(index())}
-                aria-label={`Remove image ${index() + 1}`}
-                title="Remove image"
-              >
-                ×
-              </button>
-            </div>
-          )}
-        </Index>
-      </div>
-    </Show>
-  )
-
-  const renderComposer = () => (
-    <div class="gen-text-wrapper" class:op-50={systemRoleEditing()}>
-      <textarea
-        ref={inputRef}
-        disabled={systemRoleEditing()}
-        onKeyDown={handleKeydown}
-        placeholder="Enter something... (or upload an image)"
-        autocomplete="off"
-        autofocus
-        onInput={autosizeTextarea}
-        rows="1"
-        class="gen-textarea"
-      />
-
-      <button
-        type="button"
-        title="Upload Image"
-        onClick={openFilePicker}
-        disabled={systemRoleEditing()}
-        gen-slate-btn
-      >
-        <IconImage />
-      </button>
-
-      <input
-        type="file"
-        ref={fileInputRef}
-        accept="image/*"
-        multiple
-        style="display: none;"
-        onChange={handleFileUpload}
-      />
-
-      <button
-        type="button"
-        onClick={sendMessage}
-        disabled={systemRoleEditing()}
-        gen-slate-btn
-      >
-        Send
-      </button>
-
-      <button
-        type="button"
-        title="Clear"
-        onClick={clearChat}
-        disabled={systemRoleEditing()}
-        gen-slate-btn
-      >
-        <IconClear />
-      </button>
-    </div>
-  )
-
   return (
-    <div my-6>
+    <div class="my-6">
       <SystemRoleSettings
         canEdit={() => messageList().length === 0}
         systemRoleEditing={systemRoleEditing}
@@ -412,43 +323,84 @@ export default function ChatPage() {
         currentSystemRoleSettings={currentSystemRoleSettings}
         setCurrentSystemRoleSettings={setCurrentSystemRoleSettings}
       />
-
+      
+      {/* Historical Messages List Layout Container */}
       <Index each={messageList()}>
         {(message, index) => (
           <MessageItem
             role={message().role}
             message={message().content}
-            showRetry={() => message().role === 'assistant' && index() === messageList().length - 1}
+            showRetry={() => (message().role === 'assistant' && index === messageList().length - 1)}
             onRetry={retryLastFetch}
           />
         )}
       </Index>
-
-      {currentAssistantMessage() && (
+      
+      {/* Active Streaming Chunk Display Row */}
+      <Show when={currentAssistantMessage()}>
         <MessageItem
           role="assistant"
           message={currentAssistantMessage}
         />
-      )}
+      </Show>
 
-      {currentError() && (
-        <ErrorMessageItem
-          data={currentError()!}
-          onRetry={retryLastFetch}
-        />
-      )}
-
-      <Show
-        when={!loading()}
-        fallback={() => (
-          <div class="gen-cb-wrapper">
-            <span>AI is thinking...</span>
-            <div class="gen-cb-stop" onClick={stopStreamFetch}>Stop</div>
+      {currentError() && <ErrorMessageItem data={currentError()!} onRetry={retryLastFetch} />}
+      
+      {/* Footer Interface Workspace */}
+      <Show when={!loading() || controller()} fallback={<div class="gen-loading">Loading request stream...</div>}>
+        
+        {/* Selected Image Thumbnail Previews */}
+        <Show when={selectedImages().length > 0}>
+          <div class="selected-images-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+            <Index each={selectedImages()}>
+              {(imageUrl, index) => (
+                <div class="image-preview" style="position: relative; width: 100px; height: 100px;">
+                  <img 
+                    src={imageUrl()} 
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;"
+                  />
+                  <div 
+                    class="remove-image" 
+                    style="position: absolute; top: -8px; right: -8px; background: rgba(0,0,0,0.6); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                    onClick={() => removeImage(index)}
+                  >×</div>
+                </div>
+              )}
+            </Index>
           </div>
-        )}
-      >
-        {renderSelectedImages()}
-        {renderComposer()}
+        </Show>
+        
+        {/* Interactive Text Input Tray Element Area */}
+        <div class="gen-text-wrapper" classList={{ 'op-50': systemRoleEditing() }}>
+          <textarea
+            ref={inputRef!}
+            disabled={systemRoleEditing()}
+            onKeyDown={handleKeydown}
+            placeholder="Enter something... (or upload an image)"
+            autocomplete="off"
+            autofocus
+            onInput={autosizeTextarea}
+            rows="1"
+            class="gen-textarea"
+          />
+          <button title="Upload Image" onClick={openFilePicker} disabled={systemRoleEditing()} gen-slate-btn>
+            <IconImage />
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef!} 
+            accept="image/*" 
+            multiple 
+            style="display: none;" 
+            onChange={handleFileUpload} 
+          />
+          <button onClick={sendMessage} disabled={systemRoleEditing()} gen-slate-btn>
+            Send
+          </button>
+          <button title="Clear" onClick={clearChat} disabled={systemRoleEditing()} gen-slate-btn>
+            <IconClear />
+          </button>
+        </div>
       </Show>
     </div>
   )
