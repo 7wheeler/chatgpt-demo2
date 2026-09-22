@@ -32,7 +32,7 @@ export const generatePayload = (apiKey: string, messages: ChatMessage[]): Reques
     body: JSON.stringify({
       model,
       messages: formattedMessages,
-      temperature: 0.6,
+      temperature: 1,
       max_completion_tokens: maxTokens,
       stream: true,
     }),
